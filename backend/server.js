@@ -1,6 +1,7 @@
 import path from 'path';
 import express from 'express';
 import dotenv from 'dotenv';
+import morgan from 'morgan';
 import connectDB from './config/db.js';
 import colors from 'colors';
 import productRoutes from './routes/productRoutes.js';
@@ -13,6 +14,10 @@ dotenv.config();
 const app = express();
 
 connectDB();
+
+if (process.env.NODE_ENV === 'development mode') {
+  app.use(morgan('dev'));
+}
 
 app.use(express.json()); //allows using json in body of POST requests
 
@@ -27,6 +32,18 @@ app.get('/api/config/paypal', (req, res) =>
 
 const __dirname = path.resolve();
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '/frontend/build')));
+
+  app.get('*', (req, res) =>
+    res.sendFile(path.resolve(__dirname, 'frontend', 'build', 'index.html'))
+  );
+} else {
+  app.get('/', (res, req) => {
+    res.send('API running...');
+  });
+}
 
 app.use(notFound);
 
